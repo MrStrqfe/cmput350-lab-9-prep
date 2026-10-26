@@ -92,7 +92,7 @@ int main() {
     sf::View worldView = window.getView();
     sf::View guiView = window.getView();
     Camera camera(sf::Vector2f(window.getSize()), {WINDOW_WIDTH * 0.5f, WINDOW_HEIGHT * 0.5f});
-
+    
     while (window.isOpen()) {
         while (auto event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
@@ -138,8 +138,32 @@ int main() {
         //
         // Use SOFT_LIMIT_PERCENT and HARD_LIMIT_PERCENT to parameterize the green and red
         // line positions.
-        camera.setCameraCenter({player.position.x, WINDOW_HEIGHT * 0.5f});
+        
+        // 1. Find the player on the screen
+        float x = camera.worldToWindowPercent(player.position).x;
 
+        // 2. Hard and Soft Zones
+        float hardLeft = HARD_LIMIT_PERCENT;            // 0.2
+        float hardRight = 1.0f - HARD_LIMIT_PERCENT;    // 0.8
+        float softLeft = SOFT_LIMIT_PERCENT;            // 0.333
+        float softRight = 1.0f - SOFT_LIMIT_PERCENT;    // 0.667
+
+        if (x > hardRight) {
+            camera.translateWindowPercent({x - hardRight, 0.0f});
+        }
+        else if (x < hardLeft) {
+            camera.translateWindowPercent({x - hardLeft, 0.0f});
+        }
+        // 3. Soft zones (the moving average)
+        else if (x > softRight) {
+            camera.translateWindowPercent({SOFT_CAMERA_ALPHA * (x - softRight), 0.0f});
+        }
+        else if (x < softLeft) {
+            camera.translateWindowPercent({SOFT_CAMERA_ALPHA * (x - softLeft), 0.0f});
+        }
+
+        //camera.setCameraCenter({player.position.x, WINDOW_HEIGHT * 0.5f});
+        
         worldView.setCenter(camera.getCameraCenter());
         window.clear(sf::Color::Black);
         // world rendering
